@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Data Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        #fileInput {
+            margin-bottom: 1rem;
+        }
+
+        #filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        #filters select,
+        #searchBar {
+            padding: 5px;
+            font-size: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            cursor: pointer;
+            background-color: #f4f4f4;
+        }
+
+        #actions {
+            margin-bottom: 1rem;
+        }
+
+        button {
+            padding: 7px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 600px) {
+            #filters {
+                flex-direction: column;
+            }
+
+            button {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Student Data Dashboard</h1>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+    <div id="filters">
+        <select id="filterBranch">
+            <option value="">All Branches</option>
+        </select>
+        <select id="filterYear">
+            <option value="">All Years</option>
+        </select>
+        <select id="filterInterest">
+            <option value="">All Interests</option>
+        </select>
+        <input type="search" id="searchBar" placeholder="Search by name, email..." />
+    </div>
+
+    <div id="actions">
+        <button id="sendEmailBtn" disabled>Send Email to Selected</button>
+        <button id="exportCsvBtn" disabled>Export Filtered as CSV</button>
+    </div>
+
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="selectAll" /></th>
+                <th data-key="Name">Name</th>
+                <th data-key="Branch">Branch</th>
+                <th data-key="Year">Year</th>
+                <th data-key="Email">Email</th>
+                <th data-key="Interests">Interests</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</body>
+<!-- use xlsx.full.min.js from version 0.20.3 -->
+<script type="text/javascript" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+    let allData = [];
+    let filteredData = [];
+    document
+        .querySelector("#fileInput")
+        .addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const data = await file.arrayBuffer();
+            const workBook = XLSX.read(data);
+            const sheetName = workBook.SheetNames[0];
+            const sheet = workBook.Sheets[sheetName];
+            allData = XLSX.utils.sheet_to_json(sheet);
+            filteredData = allData;
+            console.log(allData);
+
+            fillFilter(allData);
+            renderTable(filteredData)
+        });
+    function fillFilter(data) {
+        let branches = new Set();
+        let years = new Set();
+        let interests = new Set();
+        data.array.forEach((obj) => {
+            if (obj.Branch) branches.add(capitalizeWords(obj.Branch));
+            if (obj.Years) {
+                let num = obj.Years;
+                if (isNaN(num)) {
+                    num = capitalizeWords(wordToNumber[num.toLowerCase()]);
+                }
+                if (num !== undefined && !isNaN(num)) {
+                    years.add(num);
+                }
+            }
+            if (obj.Interests) {
+                obj.Interests.split(",").forEach((int) => {
+                    interests.add(capitalizeWords(int.trim()));
+                });
+            }
+        });
+
+        branches = Array.from(branches).sort();
+        years = Array.from(years).sort();
+        interests = Array.from(interests).sort();
+        const Bran = document.getElementById("filterBranch");
+        branches.forEach((b) => {
+            let opt = document.createElement("option");
+            opt.value = b;
+            opt.textContent = b;
+            Bran.appendChild(opt);
+        });
+        const Year = document.getElementById("filterYears");
+        years.forEach((y) => {
+            let opt = document.createElement("option");
+            opt.value = y;
+            opt.textContent = y;
+            Year.appendChild(opt);
+        });
+        const Inte = document.getElementById("filterYears");
+        years.forEach((i) => {
+            let opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = i;
+            Inte.appendChild(opt);
+        });
+    }
+    const wordToNumber = {
+        one: 1,
+        two: 2,
+        three: 3,
+        four: 4,
+        five: 5,
+        first: 1,
+        second: 2,
+        third: 3,
+        fourth: 4,
+        fifth: 5,
+    };
+    function capitalizeWords(str) 
+    {
+        if (!str) return "";
+        return str
+            .toLowerCase()
+            .split(/\s+/)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    }
+    function appplyFilters()
+    {
+        const filterBranch=document.getElementById('filterBranch');
+        const filterYear=document.getElementById('filterYear');
+        const filterInterest=document.getElementById('filterInterest');
+        let search=document.getElementById('searchBar');
+        filteredData= allData.filter(obj =>{
+            let branchNeeded=(!filterBranch || obj.Branch===filterBranch);
+            let yearNeeded=(!filterYear || toNumber(filterYear) === toNumber(obj.Year));
+            let intrestNeeded=(!filterInterest ||
+                obj.Interests && capitalizeWords(obj.Interests).includes(filterInterest))
+            let searchNeeded=(!search || Object.values(obj).some(val=>
+                val || val.toString().toLowerCase.includes(search.toLowerCase())
+            ))
+            return branchNeeded && yearNeeded && intrestNeeded && searchNeeded;
+        })
+        renderTable(filteredData);
+    }
+    function toNumber(n)
+    {
+        if(!n) return NaN;
+        n=n.toString().trim().toLowerCase();
+        directN=Number(n);
+        if(!directN) return wordToNumber[n] ?? NaN;
+        return directN;
+    }
+    renderTable(data)
+    {
+        const tbody=document.querySelector('#tableBody');
+        data.forEach(obj => {
+            let tr=document.createElement('tr');
+            
+        })
+    }
+</script>
+
+</html>
