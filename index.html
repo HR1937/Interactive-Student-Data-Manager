@@ -94,6 +94,8 @@
     </div>
 
     <div id="actions">
+        <input type="text" id="emailSubject" placeholder="Email Subject" />
+        <textarea id="emailBody" placeholder="Email Body"></textarea>
         <button id="sendEmailBtn" disabled>Send Email to Selected</button>
         <button id="exportCsvBtn" disabled>Export Filtered as CSV</button>
     </div>
@@ -115,8 +117,8 @@
 <!-- use xlsx.full.min.js from version 0.20.3 -->
 <script type="text/javascript" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
-    let allData = [];
-    let filteredData = [];
+    let allData = new Set();
+    let filteredData = new Set();
     document
         .querySelector("#fileInput")
         .addEventListener("change", async (e) => {
@@ -128,7 +130,7 @@
             const sheet = workBook.Sheets[sheetName];
             allData = XLSX.utils.sheet_to_json(sheet);
             filteredData = allData;
-            console.log(allData);
+            // console.log(allData);
 
             fillFilter(allData);
             renderTable(filteredData)
@@ -137,7 +139,7 @@
         let branches = new Set();
         let years = new Set();
         let interests = new Set();
-        data.array.forEach((obj) => {
+        Array.from(data).array.forEach((obj) => {
             if (obj.Branch) branches.add(capitalizeWords(obj.Branch));
             if (obj.Years) {
                 let num = obj.Years;
@@ -192,8 +194,7 @@
         fourth: 4,
         fifth: 5,
     };
-    function capitalizeWords(str) 
-    {
+    function capitalizeWords(str) {
         if (!str) return "";
         return str
             .toLowerCase()
@@ -201,39 +202,113 @@
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(" ");
     }
-    function appplyFilters()
-    {
-        const filterBranch=document.getElementById('filterBranch');
-        const filterYear=document.getElementById('filterYear');
-        const filterInterest=document.getElementById('filterInterest');
-        let search=document.getElementById('searchBar');
-        filteredData= allData.filter(obj =>{
-            let branchNeeded=(!filterBranch || obj.Branch===filterBranch);
-            let yearNeeded=(!filterYear || toNumber(filterYear) === toNumber(obj.Year));
-            let intrestNeeded=(!filterInterest ||
+    function appplyFilters() {
+        const filterBranch = document.getElementById('filterBranch');
+        const filterYear = document.getElementById('filterYear');
+        const filterInterest = document.getElementById('filterInterest');
+        let search = document.getElementById('searchBar');
+        Array.from(filteredData) = Array.from(allData).filter(obj => {
+            let branchNeeded = (!filterBranch || obj.Branch === filterBranch);
+            let yearNeeded = (!filterYear || toNumber(filterYear) === toNumber(obj.Year));
+            let intrestNeeded = (!filterInterest ||
                 obj.Interests && capitalizeWords(obj.Interests).includes(filterInterest))
-            let searchNeeded=(!search || Object.values(obj).some(val=>
+            let searchNeeded = (!search || Object.values(obj).some(val =>
                 val || val.toString().toLowerCase.includes(search.toLowerCase())
             ))
             return branchNeeded && yearNeeded && intrestNeeded && searchNeeded;
         })
         renderTable(filteredData);
+        selectedEmails = new Set(
+            Array.from(filteredData)
+                .filter(student => selectedEmails.has(student.Email))
+                .map(student => student.Email)
+        ); //Notable Bug(of sending the emails or consider in CSV the ones who are not in the filtered list but were checked in the previous list) would be seen if we ignore this step to remove the checked ones which are not present in the new filtered list!
     }
-    function toNumber(n)
-    {
-        if(!n) return NaN;
-        n=n.toString().trim().toLowerCase();
-        directN=Number(n);
-        if(!directN) return wordToNumber[n] ?? NaN;
+    function toNumber(n) {
+        if (!n) return NaN;
+        n = n.toString().trim().toLowerCase();
+        directN = Number(n);
+        if (!directN) return wordToNumber[n] ?? NaN;
         return directN;
     }
     renderTable(data)
     {
-        const tbody=document.querySelector('#tableBody');
+        const tbody = document.querySelector('#tableBody');
+        tbody.innerHTML = '';
         data.forEach(obj => {
-            let tr=document.createElement('tr');
-            
+            let tr = document.createElement('tr');
+            let cheackedTd = document.createElement('td');
+            let checkBox = document.createElement('input');
+            checkBox.type = checkBox;
+            checkBox.checked = selectedEmails.has(obj.Emails);
+            cheackedTd.appendChild(checkbox);
+            ['Name', 'Branch', 'Year', 'Email', 'Interests'].forEach(key => {
+                let td = document.createElement('td');
+                td.textContent = obj[key] || '';
+                tr.appendChild(td);
+            })
+            tbody.appendChild(tr);
         })
+        updateActionButtons();
+        updateSelectAllCheckbox();
+    }
+    document.getElementById('tableBody').addEventListener('change', (e) => {
+        if (e.target.type == checkbox) {
+            if (e.target.checked) {
+                selectedEmails.add(e.target.dataset.email);
+            }
+            else selectedEmails.delete(e.target.dataset.email);
+            updateActionButtons();
+            updateSelectAllCheckbox();
+        }
+    })
+    document.getElementById('selectAll').addEventListener((e) => {
+        if (e.target.checked) {
+            for (obj of Array.from(allData)) {
+                selectedEmails.add(obj.Email);
+            }
+        }
+        else {
+            for (obj of Array.from(allData)) {
+                selectedEmails.delete(obj.Email);
+            }
+        }
+        renderTable(filteredData);
+    })
+    function updateActionButtons() {
+        const isDis = selectedEmails.size() > 0;
+        document.getElementById('sendEmailBtn').disabled = !isDis;
+        document.getElementById('exportCsvBtn').disabled = !isDis;
+    }
+    function updateSelectAllCheckbox() {
+        const selectAll=document.getElementById('selectAll');
+        if(filteredData.size()==0)
+        {
+            selectAll.indetermined=fasle;
+            selectAll.checked=false;
+            return;
+        }
+        if(selectedEmails.size()==0){
+            selectAll.indetermined=fasle;
+            selectAll.checked=false;
+        }
+        else if (filteredData.size() == selectedEmails.size()) {
+            selectAll.indetermined=fasle;
+            selectAll.checked=true;
+        }
+        else{
+            selectAll.checked=false;
+            selectAll.indetermined=true;
+        }
+    }
+    document.getElementById('sendEmailBtn').addEventListener('click',sendEmail)
+    function sendEmail()
+    {
+        if(selectedEmails.size()==0)
+        {
+            alert('No Stdents are selected!')
+        }
+        if()
     }
 </script>
 
