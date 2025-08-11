@@ -1,315 +1,593 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Student Data Dashboard</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 20px;
             max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
+            background-color: #f5f7fa;
+            color: #333;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 25px;
         }
 
         #fileInput {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            width: 100%;
+            background-color: #f8f9fa;
+            cursor: pointer;
         }
 
         #filters {
             display: flex;
-            gap: 10px;
-            margin-bottom: 1rem;
+            gap: 15px;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
         }
 
-        #filters select,
-        #searchBar {
-            padding: 5px;
+        #filters select, #searchBar {
+            padding: 10px;
             font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 180px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        #searchBar {
+            flex: 2;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 8px;
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px 15px;
             text-align: left;
         }
 
         th {
             cursor: pointer;
-            background-color: #f4f4f4;
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #e3f2fd;
         }
 
         #actions {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            #actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        #emailFields {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #emailSubject, #emailBody {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        #emailBody {
+            min-height: 120px;
+            resize: vertical;
         }
 
         button {
-            padding: 7px 15px;
+            padding: 12px 20px;
             font-size: 1rem;
             cursor: pointer;
-            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #sendEmailBtn {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        #sendEmailBtn:hover {
+            background-color: #219653;
+        }
+
+        #sendEmailBtn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        #exportCsvBtn {
+            background-color: #2980b9;
+            color: white;
+        }
+
+        #exportCsvBtn:hover {
+            background-color: #2573a7;
+        }
+
+        #exportCsvBtn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            background-color: #e3f2fd;
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .sort-indicator {
+            margin-left: 5px;
+            font-weight: bold;
         }
 
         @media (max-width: 600px) {
             #filters {
                 flex-direction: column;
             }
-
+            
             button {
+                width: 100%;
                 margin-bottom: 10px;
             }
         }
     </style>
 </head>
-
 <body>
-    <h1>Student Data Dashboard</h1>
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
-    <div id="filters">
-        <select id="filterBranch">
-            <option value="">All Branches</option>
-        </select>
-        <select id="filterYear">
-            <option value="">All Years</option>
-        </select>
-        <select id="filterInterest">
-            <option value="">All Interests</option>
-        </select>
-        <input type="search" id="searchBar" placeholder="Search by name, email..." />
+    <div class="container">
+        <h1>🎓 Student Data Dashboard</h1>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        
+        <div id="filters">
+            <select id="filterBranch">
+                <option value="">All Branches</option>
+            </select>
+            <select id="filterYear">
+                <option value="">All Years</option>
+            </select>
+            <select id="filterInterest">
+                <option value="">All Interests</option>
+            </select>
+            <input type="search" id="searchBar" placeholder="🔍 Search by name, email..." />
+        </div>
+
+        <div id="actions">
+            <div id="emailFields">
+                <input type="text" id="emailSubject" placeholder="Email Subject" />
+                <textarea id="emailBody" placeholder="Email Body"></textarea>
+                <button id="sendEmailBtn" disabled>📧 Send Email to Selected</button>
+            </div>
+            <button id="exportCsvBtn" disabled>📥 Export Filtered as CSV</button>
+        </div>
+
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll" /></th>
+                    <th data-key="Name">Name <span class="sort-indicator"></span></th>
+                    <th data-key="Branch">Branch <span class="sort-indicator"></span></th>
+                    <th data-key="Year">Year <span class="sort-indicator"></span></th>
+                    <th data-key="Email">Email <span class="sort-indicator"></span></th>
+                    <th data-key="Interests">Interests <span class="sort-indicator"></span></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        
+        <div class="status-bar">
+            <span id="studentCount">No data loaded</span>
+            <span id="selectedCount">0 students selected</span>
+        </div>
     </div>
 
-    <div id="actions">
-        <input type="text" id="emailSubject" placeholder="Email Subject" />
-        <textarea id="emailBody" placeholder="Email Body"></textarea>
-        <button id="sendEmailBtn" disabled>Send Email to Selected</button>
-        <button id="exportCsvBtn" disabled>Export Filtered as CSV</button>
-    </div>
+    <script type="text/javascript" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>
+        let allData = new Set();
+        let filteredData = new Set();
+        let selectedEmails = new Set();
+        let originalData = [];
+        let sortState = { column: null, direction: null }; // 'asc', 'desc', or null
 
-    <table id="studentTable">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="selectAll" /></th>
-                <th data-key="Name">Name</th>
-                <th data-key="Branch">Branch</th>
-                <th data-key="Year">Year</th>
-                <th data-key="Email">Email</th>
-                <th data-key="Interests">Interests</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
-</body>
-<!-- use xlsx.full.min.js from version 0.20.3 -->
-<script type="text/javascript" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script>
-    let allData = new Set();
-    let filteredData = new Set();
-    document
-        .querySelector("#fileInput")
-        .addEventListener("change", async (e) => {
+        document.getElementById('filterBranch').addEventListener('change', applyFilters);
+        document.getElementById('filterYear').addEventListener('change', applyFilters);
+        document.getElementById('filterInterest').addEventListener('change', applyFilters);
+        document.getElementById('searchBar').addEventListener('input', applyFilters);
+
+        document.querySelector("#fileInput").addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             const data = await file.arrayBuffer();
             const workBook = XLSX.read(data);
             const sheetName = workBook.SheetNames[0];
             const sheet = workBook.Sheets[sheetName];
-            allData = XLSX.utils.sheet_to_json(sheet);
-            filteredData = allData;
-            // console.log(allData);
+            const jsonData = XLSX.utils.sheet_to_json(sheet);
+            
+            allData = new Set(jsonData);
+            filteredData = new Set(allData);  
+            originalData = Array.from(allData); 
 
             fillFilter(allData);
-            renderTable(filteredData)
-        });
-    function fillFilter(data) {
-        let branches = new Set();
-        let years = new Set();
-        let interests = new Set();
-        Array.from(data).array.forEach((obj) => {
-            if (obj.Branch) branches.add(capitalizeWords(obj.Branch));
-            if (obj.Years) {
-                let num = obj.Years;
-                if (isNaN(num)) {
-                    num = capitalizeWords(wordToNumber[num.toLowerCase()]);
-                }
-                if (num !== undefined && !isNaN(num)) {
-                    years.add(num);
-                }
-            }
-            if (obj.Interests) {
-                obj.Interests.split(",").forEach((int) => {
-                    interests.add(capitalizeWords(int.trim()));
-                });
-            }
+            applyFilters();
         });
 
-        branches = Array.from(branches).sort();
-        years = Array.from(years).sort();
-        interests = Array.from(interests).sort();
-        const Bran = document.getElementById("filterBranch");
-        branches.forEach((b) => {
-            let opt = document.createElement("option");
-            opt.value = b;
-            opt.textContent = b;
-            Bran.appendChild(opt);
-        });
-        const Year = document.getElementById("filterYears");
-        years.forEach((y) => {
-            let opt = document.createElement("option");
-            opt.value = y;
-            opt.textContent = y;
-            Year.appendChild(opt);
-        });
-        const Inte = document.getElementById("filterYears");
-        years.forEach((i) => {
-            let opt = document.createElement("option");
-            opt.value = i;
-            opt.textContent = i;
-            Inte.appendChild(opt);
-        });
-    }
-    const wordToNumber = {
-        one: 1,
-        two: 2,
-        three: 3,
-        four: 4,
-        five: 5,
-        first: 1,
-        second: 2,
-        third: 3,
-        fourth: 4,
-        fifth: 5,
-    };
-    function capitalizeWords(str) {
-        if (!str) return "";
-        return str
-            .toLowerCase()
-            .split(/\s+/)
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-    }
-    function appplyFilters() {
-        const filterBranch = document.getElementById('filterBranch');
-        const filterYear = document.getElementById('filterYear');
-        const filterInterest = document.getElementById('filterInterest');
-        let search = document.getElementById('searchBar');
-        Array.from(filteredData) = Array.from(allData).filter(obj => {
-            let branchNeeded = (!filterBranch || obj.Branch === filterBranch);
-            let yearNeeded = (!filterYear || toNumber(filterYear) === toNumber(obj.Year));
-            let intrestNeeded = (!filterInterest ||
-                obj.Interests && capitalizeWords(obj.Interests).includes(filterInterest))
-            let searchNeeded = (!search || Object.values(obj).some(val =>
-                val || val.toString().toLowerCase.includes(search.toLowerCase())
-            ))
-            return branchNeeded && yearNeeded && intrestNeeded && searchNeeded;
-        })
-        renderTable(filteredData);
-        selectedEmails = new Set(
-            Array.from(filteredData)
-                .filter(student => selectedEmails.has(student.Email))
-                .map(student => student.Email)
-        ); //Notable Bug(of sending the emails or consider in CSV the ones who are not in the filtered list but were checked in the previous list) would be seen if we ignore this step to remove the checked ones which are not present in the new filtered list!
-    }
-    function toNumber(n) {
-        if (!n) return NaN;
-        n = n.toString().trim().toLowerCase();
-        directN = Number(n);
-        if (!directN) return wordToNumber[n] ?? NaN;
-        return directN;
-    }
-    renderTable(data)
-    {
-        const tbody = document.querySelector('#tableBody');
-        tbody.innerHTML = '';
-        data.forEach(obj => {
-            let tr = document.createElement('tr');
-            let cheackedTd = document.createElement('td');
-            let checkBox = document.createElement('input');
-            checkBox.type = checkBox;
-            checkBox.checked = selectedEmails.has(obj.Emails);
-            cheackedTd.appendChild(checkbox);
-            ['Name', 'Branch', 'Year', 'Email', 'Interests'].forEach(key => {
-                let td = document.createElement('td');
-                td.textContent = obj[key] || '';
-                tr.appendChild(td);
-            })
-            tbody.appendChild(tr);
-        })
-        updateActionButtons();
-        updateSelectAllCheckbox();
-    }
-    document.getElementById('tableBody').addEventListener('change', (e) => {
-        if (e.target.type == checkbox) {
-            if (e.target.checked) {
-                selectedEmails.add(e.target.dataset.email);
-            }
-            else selectedEmails.delete(e.target.dataset.email);
+        function fillFilter(data) {
+            document.getElementById("filterBranch").innerHTML = '<option value="">All Branches</option>';
+            document.getElementById("filterYear").innerHTML = '<option value="">All Years</option>';
+            document.getElementById("filterInterest").innerHTML = '<option value="">All Interests</option>';
+            
+            let branches = new Set();
+            let years = new Set();
+            let interests = new Set();
+            
+            Array.from(data).forEach((obj) => {
+                if (obj.Branch) branches.add(capitalizeWords(obj.Branch));
+                if (obj.Year != null) {
+                    let num = obj.Year;
+                    if (isNaN(num)) {
+                        num = wordToNumber[num.toLowerCase()];
+                    }
+                    if (num !== undefined && !isNaN(num)) {
+                        years.add(num);
+                    }
+                }
+                if (obj.Interests) {
+                    obj.Interests.split(",").forEach((int) => {
+                        interests.add(capitalizeWords(int.trim()));
+                    });
+                }
+            });
+
+            branches = Array.from(branches).sort();
+            years = Array.from(years).sort();
+            interests = Array.from(interests).sort();
+            
+            const Bran = document.getElementById("filterBranch");
+            branches.forEach((b) => {
+                let opt = document.createElement("option");
+                opt.value = b;
+                opt.textContent = b;
+                Bran.appendChild(opt);
+            });
+            
+            const Year = document.getElementById("filterYear");
+            years.forEach((y) => {
+                let opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = y;
+                Year.appendChild(opt);
+            });
+            
+            const Inte = document.getElementById("filterInterest");
+            interests.forEach((i) => {
+                let opt = document.createElement("option");
+                opt.value = i;
+                opt.textContent = i;
+                Inte.appendChild(opt);
+            });
+        }
+
+        const wordToNumber = {
+            one: 1,
+            two: 2,
+            three: 3,
+            four: 4,
+            five: 5,
+            first: 1,
+            second: 2,
+            third: 3,
+            fourth: 4,
+            fifth: 5,
+        };
+
+        function capitalizeWords(str) {
+            if (!str) return "";
+            return str
+                .toLowerCase()
+                .split(/\s+/)
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+        }
+
+        function applyFilters() {
+            const filterBranch = document.getElementById('filterBranch').value;
+            const filterYear = document.getElementById('filterYear').value;
+            const filterInterest = document.getElementById('filterInterest').value;
+            const search = document.getElementById('searchBar').value.toLowerCase();
+
+            filteredData = new Set(Array.from(allData).filter(obj => {
+                let branchNeeded = (!filterBranch || capitalizeWords(obj.Branch) === filterBranch);
+                let yearNeeded = (!filterYear || toNumber(filterYear) === toNumber(obj.Year));
+                let interestNeeded = (!filterInterest ||
+                    (obj.Interests && capitalizeWords(obj.Interests).includes(filterInterest)));
+                let searchNeeded = (!search || Object.values(obj).some(val =>
+                    val && val.toString().toLowerCase().includes(search)
+                ));
+                return branchNeeded && yearNeeded && interestNeeded && searchNeeded;
+            }));
+
+            // NOTE::::::::Clean up selectedEmails => remove any that aren't in the new filtered set
+            const filteredEmails = new Set(Array.from(filteredData).map(student => student.Email));
+            selectedEmails = new Set(
+                Array.from(selectedEmails).filter(email => filteredEmails.has(email))
+            );
+
+            renderTable(filteredData);
+            updateSortIndicators();
+        }
+
+        function toNumber(n) {
+            if (!n) return NaN;
+            n = n.toString().trim().toLowerCase();
+            let directN = Number(n);
+            if (!isNaN(directN)) return directN;
+            return wordToNumber[n] ?? NaN;
+        }
+
+        function renderTable(data) {
+            const tbody = document.querySelector('#tableBody');
+            tbody.innerHTML = '';
+            
+            Array.from(data).forEach(obj => {
+                if (!obj?.Email) return; 
+                
+                let tr = document.createElement('tr');
+                let checkedTd = document.createElement('td');
+                let checkBox = document.createElement('input');
+                checkBox.type = 'checkbox';
+                checkBox.checked = !!selectedEmails.has(obj.Email); 
+                checkBox.dataset.email = obj.Email;
+                checkedTd.appendChild(checkBox);
+                tr.appendChild(checkedTd);
+                
+                ['Name', 'Branch', 'Year', 'Email', 'Interests'].forEach(key => {
+                    let td = document.createElement('td');
+                    td.textContent = obj[key]?.toString() || ''; 
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
             updateActionButtons();
             updateSelectAllCheckbox();
+            updateStatusBar();
         }
-    })
-    document.getElementById('selectAll').addEventListener((e) => {
-        if (e.target.checked) {
-            for (obj of Array.from(allData)) {
-                selectedEmails.add(obj.Email);
-            }
-        }
-        else {
-            for (obj of Array.from(allData)) {
-                selectedEmails.delete(obj.Email);
-            }
-        }
-        renderTable(filteredData);
-    })
-    function updateActionButtons() {
-        const isDis = selectedEmails.size() > 0;
-        document.getElementById('sendEmailBtn').disabled = !isDis;
-        document.getElementById('exportCsvBtn').disabled = !isDis;
-    }
-    function updateSelectAllCheckbox() {
-        const selectAll=document.getElementById('selectAll');
-        if(filteredData.size()==0)
-        {
-            selectAll.indetermined=fasle;
-            selectAll.checked=false;
-            return;
-        }
-        if(selectedEmails.size()==0){
-            selectAll.indetermined=fasle;
-            selectAll.checked=false;
-        }
-        else if (filteredData.size() == selectedEmails.size()) {
-            selectAll.indetermined=fasle;
-            selectAll.checked=true;
-        }
-        else{
-            selectAll.checked=false;
-            selectAll.indetermined=true;
-        }
-    }
-    document.getElementById('sendEmailBtn').addEventListener('click',sendEmail)
-    function sendEmail()
-    {
-        if(selectedEmails.size()==0)
-        {
-            alert('No Stdents are selected!')
-        }
-        if()
-    }
-</script>
 
+        function updateStatusBar() {
+            document.getElementById('studentCount').textContent = 
+                `${filteredData.size} student${filteredData.size !== 1 ? 's' : ''} displayed`;
+            document.getElementById('selectedCount').textContent = 
+                `${selectedEmails.size} student${selectedEmails.size !== 1 ? 's' : ''} selected`;
+        }
+
+        document.getElementById('tableBody').addEventListener('change', (e) => {
+            if (e.target.type == 'checkbox') {
+                if (e.target.checked) {
+                    selectedEmails.add(e.target.dataset.email);
+                }
+                else selectedEmails.delete(e.target.dataset.email);
+                updateActionButtons();
+                updateSelectAllCheckbox();
+                updateStatusBar();
+            }
+        });
+
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                for (let obj of Array.from(filteredData)) {
+                    if (obj.Email) {
+                        selectedEmails.add(obj.Email);
+                    }
+                }
+            }
+            else {
+                for (let obj of Array.from(filteredData)) {
+                    if (obj.Email) {
+                        selectedEmails.delete(obj.Email);
+                    }
+                }
+            }
+            renderTable(filteredData);
+        });
+
+        function updateActionButtons() {
+            document.getElementById('sendEmailBtn').disabled = selectedEmails.size === 0;
+            document.getElementById('exportCsvBtn').disabled = filteredData.size === 0;
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAll = document.getElementById('selectAll');
+            if (filteredData.size == 0) {
+                selectAll.indeterminate = false;
+                selectAll.checked = false;
+                return;
+            }
+            if (selectedEmails.size == 0) {
+                selectAll.indeterminate = false;
+                selectAll.checked = false;
+            }
+            else if (filteredData.size == selectedEmails.size) {
+                selectAll.indeterminate = false;
+                selectAll.checked = true;
+            }
+            else {
+                selectAll.checked = false;
+                selectAll.indeterminate = true;
+            }
+        }
+
+        document.getElementById('sendEmailBtn').addEventListener('click', sendEmail);
+
+        function sendEmail() {
+            if (selectedEmails.size == 0) {
+                alert('No Students are selected!');
+                return;
+            }
+            let subject = document.getElementById('emailSubject').value.trim();
+            let body = document.getElementById('emailBody').value.trim();
+            if (!subject) {
+                alert('Please enter an email subject.');
+                document.getElementById('emailSubject').focus();
+                return;
+            }
+            if (!body) {
+                alert('Please enter an email body.');
+                document.getElementById('emailBody').focus();
+                return;
+            }
+            const emails = Array.from(selectedEmails);
+            
+            const mailtoLink = `mailto:?bcc=${emails.join(',')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.open(mailtoLink, '_blank');
+        }
+
+        document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+
+        function exportCsv() {
+            if (filteredData.size == 0) {
+                alert('No data to export!');
+                return;
+            }
+            
+            const headers = ['Name', 'Branch', 'Year', 'Email', 'Interests'];
+            let csv = [
+                headers.join(','), 
+                ...Array.from(filteredData).map(obj => {
+                    return headers.map(key => {
+                        let val = obj[key] || '';
+                        const escaped = val.toString().replace(/"/g, '""');
+                        return `"${escaped}"`;
+                    }).join(',');
+                })
+            ];
+            
+            const csvStr = csv.join('\n');
+            const blob = new Blob([csvStr], { type: 'text/csv' });
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = 'Student_Data.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        }
+
+        document.querySelectorAll('#studentTable thead th[data-key]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.getAttribute('data-key');
+                handleSort(key);
+            });
+        });
+
+        function handleSort(columnKey) {
+            if (sortState.column === columnKey) {
+                if (sortState.direction === 'asc') {
+                    sortState.direction = 'desc';
+                } else if (sortState.direction === 'desc') {
+                    sortState.column = null;
+                    sortState.direction = null;
+                    filteredData = new Set(Array.from(filteredData));
+                } else {
+                    sortState.direction = 'asc';
+                }
+            } else {
+                sortState.column = columnKey;
+                sortState.direction = 'asc';
+            }
+
+            if (sortState.direction) {
+                let sortedArray = Array.from(filteredData).sort((a, b) => {
+                    let valA = a[columnKey] || '';
+                    let valB = b[columnKey] || '';
+                    valA = valA.toString().toLowerCase();
+                    valB = valB.toString().toLowerCase();
+                    
+                    return sortState.direction === 'asc' 
+                        ? valA.localeCompare(valB) 
+                        : valB.localeCompare(valA);
+                });
+                filteredData = new Set(sortedArray);
+            }
+
+            updateSortIndicators();
+            renderTable(filteredData);
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('#studentTable thead th[data-key]').forEach(th => {
+                const key = th.getAttribute('data-key');
+                const indicator = th.querySelector('.sort-indicator');
+                indicator.textContent = '';
+                if (sortState.column === key) {
+                    indicator.textContent = sortState.direction === 'asc' ? '▲' : '▼';
+                }
+            });
+        }
+    </script>
+</body>
 </html>
